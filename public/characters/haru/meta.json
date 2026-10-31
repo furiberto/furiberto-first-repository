@@ -1,0 +1,79 @@
+{
+  "id": "haru",
+  "type": "live2d",
+  "names": {
+    "zh-CN": "Haru",
+    "en": "Haru",
+    "ja": "ハル"
+  },
+  "description": {
+    "zh-CN": "Live2D 示例（本地 Haru，可断网）",
+    "en": "Local Live2D sample (Haru, offline)",
+    "ja": "ローカルLive2Dサンプル（Haru・オフライン可）"
+  },
+  "model": "./characters/haru/Haru.model3.json",
+  "fit": 0.92,
+  "defaultExpression": "idle",
+  "expressions": [
+    {
+      "id": "idle",
+      "names": { "zh-CN": "待机动作", "en": "Idle", "ja": "待機" },
+      "motion": "Idle",
+      "motionIndex": 0
+    },
+    {
+      "id": "tap",
+      "names": { "zh-CN": "轻拍身体", "en": "Tap Body", "ja": "タップ" },
+      "motion": "TapBody",
+      "motionIndex": 0
+    },
+    {
+      "id": "smile",
+      "names": { "zh-CN": "表情 F01", "en": "Face F01", "ja": "表情 F01" },
+      "expression": "F01",
+      "motion": "Idle",
+      "motionIndex": 1
+    },
+    {
+      "id": "shy",
+      "names": { "zh-CN": "表情 F02", "en": "Face F02", "ja": "表情 F02" },
+      "expression": "F02",
+      "motion": "Idle",
+      "motionIndex": 0
+    },
+    {
+      "id": "angry",
+      "names": { "zh-CN": "表情 F03", "en": "Face F03", "ja": "表情 F03" },
+      "expression": "F03",
+      "motion": "TapBody",
+      "motionIndex": 1
+    }
+  ],
+  "lines": {
+    "idle": {
+      "zh-CN": "Live2D 模式已就绪，我会自己动哦。",
+      "en": "Live2D mode is ready — I move on my own.",
+      "ja": "Live2Dモード準備完了。自分で動くよ。"
+    },
+    "tap": {
+      "zh-CN": "嗯？找我有事吗？",
+      "en": "Hmm? Need something?",
+      "ja": "ん？何か用？"
+    },
+    "smile": {
+      "zh-CN": "嘿嘿~",
+      "en": "Hehe~",
+      "ja": "えへへ〜"
+    },
+    "shy": {
+      "zh-CN": "有点不好意思……",
+      "en": "That's a little embarrassing...",
+      "ja": "ちょっと恥ずかしい……"
+    },
+    "angry": {
+      "zh-CN": "再乱点就不理你了！",
+      "en": "Stop poking me!",
+      "ja": "つつかないで！"
+    }
+  }
+}

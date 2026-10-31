@@ -1,0 +1,3 @@
+# 仅 Image Pipeline 适配器（清单 / 哈希）。不含 PyTorch。
+# See-through 本体请在 vendor/see-through 的独立 conda 环境安装。
+pillow>=10.0.0

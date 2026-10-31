@@ -1,0 +1,41 @@
+{
+  "name": "desktop-pet",
+  "version": "0.1.0",
+  "private": true,
+  "description": "支持立绘差分与 Live2D 的桌面宠物",
+  "author": "Furiberto",
+  "license": "MIT",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "dev": "node scripts/open-local.cjs --dev",
+    "open": "node scripts/open-local.cjs",
+    "build": "vite build",
+    "start": "electron .",
+    "clean": "node scripts/clean.cjs",
+    "testdata": "node scripts/gen-testdata.cjs",
+    "pipeline:mock": "node scripts/mock-live2d-pipeline.cjs",
+    "pipeline:image:setup": "powershell -ExecutionPolicy Bypass -File services/image-pipeline/scripts/setup-see-through.ps1",
+    "pipeline:image:compat": "powershell -ExecutionPolicy Bypass -File services/image-pipeline/scripts/write-compat-snapshot.ps1",
+    "pipeline:image:dry-run": "services/image-pipeline/.venv/Scripts/python.exe services/image-pipeline/adapter/decompose_cli.py --image services/image-pipeline/fixtures/sample.png --out services/image-pipeline/workspace/jobs/dry-run --backend dry-run",
+    "pipeline:image:decompose": "powershell -ExecutionPolicy Bypass -File services/image-pipeline/scripts/run-phase0-decompose.ps1 -Image services/image-pipeline/fixtures/sample.png -Backend see-through-quantized",
+    "pipeline:image:ingest-phase0": "services/image-pipeline/.venv/Scripts/python.exe services/image-pipeline/adapter/ingest_phase0.py --src services/image-pipeline/workspace/phase0/first-run --out services/image-pipeline/workspace/jobs/phase2-ingest-test",
+    "prune:out": "node scripts/prune-out.cjs",
+    "dist": "npm run clean && npm run build && electron-builder && npm run prune:out",
+    "dist:win": "npm run clean && npm run build && electron-builder --win && npm run prune:out"
+  },
+  "dependencies": {
+    "@pixi/unsafe-eval": "^6.5.10",
+    "pixi-live2d-display": "^0.4.0",
+    "pixi.js": "^6.5.10",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.4",
+    "concurrently": "^9.1.2",
+    "electron": "^34.2.0",
+    "electron-builder": "^25.1.8",
+    "vite": "^6.1.0",
+    "wait-on": "^8.0.2"
+  }
+}
