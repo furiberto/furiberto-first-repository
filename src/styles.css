@@ -1028,3 +1028,15 @@ select {
   background: transparent;
   padding: 8px 8px 8px 0;
 }
+
+.layer-edit-box {
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--panel-edge);
+  border-radius: 10px;
+  background: #fff;
+}
+.layer-list li.is-selected {
+  outline: 1px solid var(--accent);
+}

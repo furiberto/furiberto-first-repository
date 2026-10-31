@@ -49,4 +49,10 @@ contextBridge.exposeInMainWorld('petDesktop', {
   markJobAwaitingRigging: (jobId) => ipcRenderer.invoke('pet:mark-job-awaiting-rigging', jobId),
   revealJobPsd: (jobId) => ipcRenderer.invoke('pet:reveal-job-psd', jobId),
   seedPhase0ReviewJob: () => ipcRenderer.invoke('pet:seed-phase0-review-job'),
+  saveJobRevision: (jobId, options) =>
+    ipcRenderer.invoke('pet:save-job-revision', { jobId, ...(options || {}) }),
+  exportJobPsd: (jobId, options) =>
+    ipcRenderer.invoke('pet:export-job-psd', { jobId, ...(options || {}) }),
+  revealJobExport: (jobId, relative) =>
+    ipcRenderer.invoke('pet:reveal-job-export', { jobId, relative }),
 })

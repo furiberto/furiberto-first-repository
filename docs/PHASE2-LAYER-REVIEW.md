@@ -40,16 +40,29 @@ live2d-jobs/<id>/
 
 前端**只**通过 IPC + `petjob://<jobId>/<rel>` 取图，不拼本地绝对路径。
 
+## PSD 权威来源（已验证）
+
+| 来源 | 本机 `sample` 结果 | 结论 |
+|------|-------------------|------|
+| See-through 彩色 PSD | 仅 **3** 层（有像素的 face / back hair / eyelash），且为裁剪 bbox | **不能**作为完整导出权威 |
+| `decomposition/layers/*.png` + `layer-manifest.json` | **24** 个全画布 RGBA part | **导出权威** |
+| 重建 PSD（`export_psd.py`） | 24 层、顺序/名称/透明度可回读；CJK 名需 `encoding=utf-8` | 通过 `psd_tools` 自检 |
+
+说明：合成测试图多数 part 为空；真实立绘会有更多非空层。Cubism 人工打开验收仍待本机执行。
+
 ## 当前已实现
 
 1. 产物规范化：`adapter/normalize_layers.py` + `ingest_phase0.py`
-2. 图层清单：`getJobLayerReview`（`electron/layer-review.cjs`）
-3. 只读审阅 UI：`LayerReviewPanel.jsx`（合成、显隐、单层、叠原图、缩放）
-4. 状态出口：`markAwaitingRigging`（仍 `live2d_ready=false`）
-5. 演示入口：高级选项「导入 phase0 演示产物」
+2. 图层清单：`getJobLayerReview`（`petjob://`）
+3. 审阅 UI：合成 / 显隐 / 单层 / 叠原图 / 缩放
+4. **非破坏修订**：`revision_ops.py` → `revisions/revision-NNN/`（不写 `decomposition/`）
+5. **轻量修正**：重命名、排序、显隐、透明度 → 保存新修订
+6. **PSD 导出**：`export_psd.py` 按指定 `revision_id` 重建 + 回读校验 + `*.export.json`
+7. 状态出口：`awaiting_rigging`；导出后仍 `live2d_ready=false`
+8. 演示入口：高级选项「导入 phase0 演示产物」
 
-## 下一步（仍属阶段 2）
+## 下一步
 
-1. 非破坏修订：重命名 / 排序 / 透明度 / 局部遮罩 → `revisions/revision-NNN`
-2. 从修订导出 PSD（`psd_tools`，须 Cubism 可打开验证）
-3. 验收：≥3 张不同类型立绘跑通「分层 → 修正 → 导出 → Cubism 打开」
+1. 局部遮罩修正（补回 / 擦除）
+2. Cubism Editor 打开导出 PSD 并记录绑定步骤
+3. ≥3 张真实立绘端到端验收

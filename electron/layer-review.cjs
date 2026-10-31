@@ -131,12 +131,21 @@ function getJobLayerReview(userData, jobId, options = {}) {
 
   const { manifest, baseRel } = loaded
   const sourceRel = findSourceRel(dir, job)
+
+  function resolveAssetRel(fileRel) {
+    const file = String(fileRel || '').replace(/\\/g, '/')
+    if (!file) return null
+    const candidates = [`${baseRel}/${file}`, `decomposition/${file}`]
+    for (const rel of candidates) {
+      if (fs.existsSync(path.join(dir, rel))) return rel
+    }
+    return candidates[candidates.length - 1]
+  }
+
   const layers = (manifest.layers || []).map((layer, index) => {
     const file = String(layer.file || '').replace(/\\/g, '/')
-    // files in manifest are relative to decomposition/ (or revision root)
-    const rel = file.startsWith('layers/') || file.startsWith('refs/') || file.startsWith('depth/')
-      ? `${baseRel}/${file}`
-      : `${baseRel}/${file}`
+    const rel = resolveAssetRel(file)
+    const depthRel = layer.depthFile ? resolveAssetRel(String(layer.depthFile).replace(/\\/g, '/')) : null
     return {
       id: layer.id || `layer-${index}`,
       name: layer.name || layer.id || `layer-${index}`,
@@ -146,9 +155,7 @@ function getJobLayerReview(userData, jobId, options = {}) {
       kind: layer.kind || 'part',
       bbox: layer.bbox || null,
       url: petjobUrl(job.id, rel),
-      depthUrl: layer.depthFile
-        ? petjobUrl(job.id, `${baseRel}/${String(layer.depthFile).replace(/\\/g, '/')}`)
-        : null,
+      depthUrl: depthRel ? petjobUrl(job.id, depthRel) : null,
     }
   })
 
@@ -266,10 +273,138 @@ function seedJobFromPhase0Folder(userData, phase0Dir, options = {}) {
   return readJson(path.join(dir, 'job.json'))
 }
 
+function resolvePipelinePython() {
+  const root = path.join(__dirname, '..', 'services', 'image-pipeline')
+  const win = path.join(root, '.venv', 'Scripts', 'python.exe')
+  const nix = path.join(root, '.venv', 'bin', 'python')
+  if (process.env.IMAGE_PIPELINE_PYTHON && fs.existsSync(process.env.IMAGE_PIPELINE_PYTHON)) {
+    return process.env.IMAGE_PIPELINE_PYTHON
+  }
+  if (fs.existsSync(win)) return win
+  if (fs.existsSync(nix)) return nix
+  return 'python'
+}
+
+function runAdapterScript(scriptName, args) {
+  const { spawnSync } = require('child_process')
+  const adapterDir = path.join(__dirname, '..', 'services', 'image-pipeline', 'adapter')
+  const script = path.join(adapterDir, scriptName)
+  if (!fs.existsSync(script)) throw new Error(`缺少脚本 ${scriptName}`)
+  const python = resolvePipelinePython()
+  const result = spawnSync(python, [script, ...args], {
+    encoding: 'utf8',
+    windowsHide: true,
+    cwd: adapterDir,
+    maxBuffer: 16 * 1024 * 1024,
+  })
+  if (result.status !== 0) {
+    throw new Error((result.stderr || result.stdout || `exit ${result.status}`).trim().slice(0, 2000))
+  }
+  return result.stdout || ''
+}
+
+/**
+ * Save a new immutable revision from UI operations. Never writes decomposition/.
+ * operations: [{ op, layer_id, value|index|order }]
+ */
+function saveJobRevision(userData, jobId, options = {}) {
+  const dir = jobDir(userData, jobId)
+  const operations = Array.isArray(options.operations) ? options.operations : []
+  if (!operations.length) throw new Error('没有可保存的修改')
+  const parent = options.parentRevisionId || 'original'
+  const label = options.label || ''
+  const opsFile = path.join(dir, 'logs', `ops-${Date.now()}.json`)
+  fs.mkdirSync(path.dirname(opsFile), { recursive: true })
+  writeJson(opsFile, operations)
+  const out = runAdapterScript('revision_ops.py', [
+    '--job',
+    dir,
+    '--parent',
+    parent,
+    '--ops-json',
+    opsFile,
+    ...(label ? ['--label', label] : []),
+  ])
+  let parsed = null
+  try {
+    parsed = JSON.parse(String(out).trim().split(/\r?\n/).filter(Boolean).pop())
+  } catch {
+    parsed = { raw: out }
+  }
+  return {
+    ...(parsed || {}),
+    live2d_ready: false,
+    review: getJobLayerReview(userData, jobId, { revisionId: parsed?.revision_id || parent }),
+  }
+}
+
+function exportJobPsd(userData, jobId, options = {}) {
+  const dir = jobDir(userData, jobId)
+  const revisionId = options.revisionId || 'original'
+  const out = runAdapterScript('export_psd.py', [
+    '--job',
+    dir,
+    '--revision',
+    revisionId,
+  ])
+  let summary = null
+  try {
+    summary = JSON.parse(String(out).trim().split(/\r?\n/).filter(Boolean).pop())
+  } catch {
+    summary = { raw: out }
+  }
+  // Prefer newest export-*.psd for reveal
+  const exportsDir = path.join(dir, 'exports')
+  let relative = null
+  if (summary?.psd) {
+    relative = path.basename(String(summary.psd)).includes('/')
+      ? String(summary.psd).replace(/\\/g, '/')
+      : `exports/${path.basename(String(summary.psd))}`
+  }
+  const jobPath = path.join(dir, 'job.json')
+  if (fs.existsSync(jobPath)) {
+    const job = readJson(jobPath)
+    job.lastExport = {
+      revisionId,
+      relative,
+      at: new Date().toISOString(),
+      verifyOk: summary?.verify_ok !== false,
+    }
+    job.live2d_ready = false
+    job.updatedAt = new Date().toISOString()
+    job.message = `已导出 PSD（修订 ${revisionId}）。请用 Cubism 打开验证；仍非 Live2D 就绪。`
+    writeJson(jobPath, job)
+  }
+  return {
+    ...summary,
+    relative,
+    live2d_ready: false,
+    review: getJobLayerReview(userData, jobId, { revisionId }),
+  }
+}
+
+function revealJobExport(userData, jobId, relativePath) {
+  const jobPath = path.join(jobDir(userData, jobId), 'job.json')
+  let rel = relativePath
+  if (!rel && fs.existsSync(jobPath)) {
+    const job = readJson(jobPath)
+    rel = job.lastExport?.relative
+  }
+  if (!rel) throw new Error('没有可显示的导出文件')
+  const file = resolveJobFile(userData, jobId, rel)
+  if (!fs.existsSync(file)) throw new Error('导出文件不存在')
+  const { shell } = require('electron')
+  shell.showItemInFolder(file)
+  return { ok: true, relative: rel }
+}
+
 module.exports = {
   getJobLayerReview,
   resolveJobFile,
   markAwaitingRigging,
   seedJobFromPhase0Folder,
+  saveJobRevision,
+  exportJobPsd,
+  revealJobExport,
   petjobUrl,
 }

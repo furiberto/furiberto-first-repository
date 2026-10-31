@@ -465,6 +465,22 @@ ipcMain.handle('pet:seed-phase0-review-job', () => {
   })
 })
 
+ipcMain.handle('pet:save-job-revision', (_event, { jobId, operations, parentRevisionId, label } = {}) =>
+  layerReview.saveJobRevision(app.getPath('userData'), jobId, {
+    operations,
+    parentRevisionId,
+    label,
+  }),
+)
+
+ipcMain.handle('pet:export-job-psd', (_event, { jobId, revisionId } = {}) =>
+  layerReview.exportJobPsd(app.getPath('userData'), jobId, { revisionId }),
+)
+
+ipcMain.handle('pet:reveal-job-export', (_event, { jobId, relative } = {}) =>
+  layerReview.revealJobExport(app.getPath('userData'), jobId, relative),
+)
+
 ipcMain.handle('pet:attach-pack-to-job', async (_event, jobId) => {
   const result = await dialog.showOpenDialog(mainWindow || undefined, {
     title: '为该任务选择 .model3.json',

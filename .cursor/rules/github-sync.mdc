@@ -1,0 +1,21 @@
+---
+description: Always commit and sync substantive work to GitHub
+alwaysApply: true
+---
+
+# GitHub 同步
+
+每次完成可交付的代码/文档改动后，**主动**提交并推送到 `origin`（`furiberto/furiberto-first-repository`），不要等用户再次提醒「上传/同步」。
+
+## 流程
+
+1. `git status` / `diff` / 近期 log（注意本机可能需要 `git -c safe.directory=...`）
+2. 提交：清晰说明 why；不提交 `.venv`、`vendor/`、`workspace/`、密钥、`node_modules`
+3. 推送：`git push origin HEAD:main`
+4. 若 `github.com` git HTTPS/SSH 不通但 `api.github.com` 可用，用仓库脚本 `scripts/sync-github-api.py`（Git Data API）把当前 HEAD 相对远程 `main` 的变更写上去
+5. 推送后用 `gh api` 核对远程 tip，并告知用户 commit URL
+
+## 例外
+
+- 用户明确说「先别推」或「只要本地」
+- 仅有无关紧要的本地实验、未请求的 WIP
