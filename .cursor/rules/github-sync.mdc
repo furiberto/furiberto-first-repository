@@ -5,7 +5,7 @@ alwaysApply: true
 
 # GitHub 同步
 
-每次完成可交付的代码/文档改动后，**主动**提交并推送到 `origin`（`furiberto/furiberto-first-repository`），不要等用户再次提醒「上传/同步」。
+每次完成可交付的代码/文档改动后，以及**本轮对话结束前**若仍有未推送提交，**主动**提交并推送到 `origin`（`furiberto/furiberto-first-repository`），不要等用户再次提醒「上传/同步」或「结束上传」。
 
 ## 流程
 
