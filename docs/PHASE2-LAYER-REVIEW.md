@@ -61,8 +61,21 @@ live2d-jobs/<id>/
 7. 状态出口：`awaiting_rigging`；导出后仍 `live2d_ready=false`
 8. 演示入口：高级选项「导入 phase0 演示产物」
 
+## P0 可靠性（本轮）
+
+- 修订：透明度 `[0,1]`、`reorder_all` 完整性、revision/parent ID 校验、失败不留半成品目录
+- 导出回读：画布、数量、名称/顺序、透明度、显隐、全画布 RGBA 像素、UTF-8 中文名
+- 版本分支：`original→A→B` 与 `A→C` 相互独立（见测试）
+- **明确：** `psd_tools` 回读成功 ≠ Cubism Editor 验收成功
+
+测试命令：
+
+```powershell
+services/image-pipeline/.venv/Scripts/python.exe services/image-pipeline/tests/test_revision_export_p0.py
+```
+
 ## 下一步
 
-1. 局部遮罩修正（补回 / 擦除）
+1. 局部遮罩修正（补回 / 擦除；独立 mask，不覆盖 AI PNG）
 2. Cubism Editor 打开导出 PSD 并记录绑定步骤
 3. ≥3 张真实立绘端到端验收

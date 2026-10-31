@@ -19,6 +19,7 @@
     "pipeline:image:dry-run": "services/image-pipeline/.venv/Scripts/python.exe services/image-pipeline/adapter/decompose_cli.py --image services/image-pipeline/fixtures/sample.png --out services/image-pipeline/workspace/jobs/dry-run --backend dry-run",
     "pipeline:image:decompose": "powershell -ExecutionPolicy Bypass -File services/image-pipeline/scripts/run-phase0-decompose.ps1 -Image services/image-pipeline/fixtures/sample.png -Backend see-through-quantized",
     "pipeline:image:ingest-phase0": "services/image-pipeline/.venv/Scripts/python.exe services/image-pipeline/adapter/ingest_phase0.py --src services/image-pipeline/workspace/phase0/first-run --out services/image-pipeline/workspace/jobs/phase2-ingest-test",
+    "pipeline:image:test-p0": "services/image-pipeline/.venv/Scripts/python.exe services/image-pipeline/tests/test_revision_export_p0.py",
     "prune:out": "node scripts/prune-out.cjs",
     "dist": "npm run clean && npm run build && electron-builder && npm run prune:out",
     "dist:win": "npm run clean && npm run build && electron-builder --win && npm run prune:out"

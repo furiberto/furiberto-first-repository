@@ -34,7 +34,7 @@ PNG/JPG/WEBP / 恋活卡
 |------|--------|-------------|
 | **0** | 兼容报告 + 一张真实分层 PSD + Haru 回归 | ✅ 合成图 NF4 已通（~5.3GB / ~10min）；见 `PHASE0-COMPAT` §6 |
 | **1** | 真实任务：`queued→decomposing→needs_review` | ✅ Electron「AI 分层」spawn 适配器 |
-| **2** | 图层面板 + 修正版本 + PSD 导出 | 🚧 只读审阅 + `petjob` API 已通；修订/导出待做（`PHASE2-LAYER-REVIEW.md`） |
+| **2** | 图层面板 + 修正版本 + PSD 导出 | 🚧 修订/导出/P0 自测已通；遮罩 + Cubism + 真实立绘待做（`PHASE2-LAYER-REVIEW.md`） |
 | **3** | ≥1 个由目标立绘人工绑定的可播放模型 | 导入验收 + 状态三分（分层完成 / 待绑定 / 可播放） |
 
 ## 建议提交顺序（阶段 0–1）

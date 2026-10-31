@@ -77,16 +77,20 @@ npm run dist:win
 |------|------|
 | [`docs/ROADMAP-AI-ASSISTED.md`](docs/ROADMAP-AI-ASSISTED.md) | 架构、模块落点、阶段 0–3 |
 | [`docs/PHASE0-COMPAT.md`](docs/PHASE0-COMPAT.md) | 本机显存/依赖兼容与 See-through 验收表 |
+| [`docs/PHASE2-LAYER-REVIEW.md`](docs/PHASE2-LAYER-REVIEW.md) | 图层审阅 / 修订 / PSD 导出约定与验收 |
 | [`docs/JOB-ARTIFACTS.md`](docs/JOB-ARTIFACTS.md) | 任务产物目录规范 |
 | [`services/image-pipeline/`](services/image-pipeline/) | **独立** Python 分层环境（See-through），与 Node 隔离 |
 
 | 阶段 | 目标 | 状态 |
 |------|------|------|
-| **运行时 A** | 任务 → 占位/导入 → 桌宠显示 | 可用（preview-placeholder + moc 导入） |
-| **阶段 0** | See-through 环境 + 一张真实分层 PSD + Haru 回归 | 进行中（骨架已就位；本机 ≈8GB 需 NF4 量化） |
-| **阶段 1–2** | 任务适配器、人工修正、PSD 出口 | 待做 |
+| **运行时 A** | 任务 → 占位/导入 → 桌宠显示 | ✅ 可用（preview-placeholder + moc 导入） |
+| **阶段 0** | See-through 环境 + 分层 PSD + Haru 回归 | ✅ 本机 NF4 已通（≈5.3GB / ~10min；合成图） |
+| **阶段 1** | 任务 spawn 适配器 → `needs_review` | ✅ |
+| **阶段 2** | 审阅 / 非破坏修订 / PSD 重建导出 | 🚧 代码+P0 自测已通；**Cubism 真机与 ≥3 张真实立绘待验收** |
 | **阶段 3** | 人工绑定真实模型导入播放 | 待做 |
 | **恋活三维 C** | KKBP 等可行性实验（独立于 Live2D） | 待验证 |
+
+分层成功 / 修订成功 / PSD 导出成功都**不会**把 `live2d_ready` 设为 true。
 
 素材生成器与桌宠运行时分离：分层失败不影响窗口；mock 成功 ≠ 真实 Live2D 生成。
 
