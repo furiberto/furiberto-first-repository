@@ -16,6 +16,8 @@
 
 ## 测试产物来源
 
+> `phase2-ingest-test` 是 **PSD 导出器回归样本**（合成测试图，仅 4 个非空层），用于验证导出结构与 Cubism 格式兼容性，**不能**作为 AI 分层质量的验收依据。真实立绘验收见 [`PHASE2-REAL-IMAGE-TEST.md`](./PHASE2-REAL-IMAGE-TEST.md)。
+
 | 项 | 值 |
 |----|-----|
 | Job | `services/image-pipeline/workspace/jobs/phase2-ingest-test` |
@@ -48,6 +50,7 @@ Copy-Item "$job\exports\cubism-B-skip-empty.*" $out -Force
 |------|----------|------------|------|--------|
 | `cubism-A-keep-empty.psd` | 24 | false | 25696946 | `5cc0a1450bb831ed2d22da873cbb98e47952681d49914d473ed1d82a58e54216` |
 | `cubism-B-skip-empty.psd` | 4 | true（跳过 20） | 9348738 | `d05c63ca3f48e0d714cfe21928f1a79cd90a76452290952ae4c88f6d325adcf0` |
+| `cubism-C-cjk-names.psd`（revision-002） | 24 | false | 25696946 | `d56364e35e393c51493eaeeb233be0f2d79e8e5152e4af47730e1352bdca4b30` |
 
 配套元数据：同目录 `*.export.json`、`MANIFEST.json`（本机）。
 
@@ -55,7 +58,7 @@ Copy-Item "$job\exports\cubism-B-skip-empty.*" $out -Force
 
 自底向上（`order` 升序）：objects, wings, tail, **back hair**, footwear, legwear, bottomwear, handwear, topwear, neckwear, neck, ears, earwear, **face**, eyewhite, irides, **eyelash**, eyebrow, eyewear, nose, mouth, front hair, headwear, **head**。
 
-标粗为 `empty=false`（有超过阈值的 alpha）。本 fixture 图层名为英文；中文名需另建含 CJK 的 revision 再测。
+标粗为 `empty=false`（有超过阈值的 alpha）。A/B 图层名为英文；中文名测试见下文 C。
 
 ### B 层列表（`--skip-empty`，4）
 
@@ -73,6 +76,8 @@ back hair → face → eyelash → head（相对 A 保留原 `order`：3 / 13 / 
 
 细半透明发丝、抗锯齿边缘若峰值 alpha ≤ 10，可能被 B 误跳过。验收时对照 A/B，记录差异；阈值可配置化留待后续，**现在不改实现**。
 
+本 fixture 实测各层最大 Alpha：`alpha=0` 共 20 层、`1–10` 共 0 层、`>10` 共 4 层——阈值在此样本上无影响；真实立绘需按 `PHASE2-REAL-IMAGE-TEST.md` §3.1 重新统计。
+
 保留空层（A）= 数据完整性 / 编辑审阅；清理空层（B）= 绑定准备候选。**不以 24 层默认更好**；以 Cubism 实测与人工绑定成本为准。
 
 ---
@@ -88,7 +93,7 @@ back hair → face → eyelash → head（相对 A 保留原 `order`：3 / 13 / 
 | 文件 SHA256 | 与上表一致 | NOT TESTED | |
 | Cubism 能否正常打开 | 无崩溃、无强制转换失败 | NOT TESTED | |
 | 图层数量 | 24 | NOT TESTED | |
-| 中文图层名称 | 本 fixture 为英文；CJK 另测 | NOT TESTED | |
+| 中文图层名称 | 本文件为英文名；中文见下文 C | NOT TESTED | |
 | 图层顺序 | 与 A 层列表一致 | NOT TESTED | |
 | 画布尺寸 | 1024×1024 | NOT TESTED | |
 | 图层坐标 / 位置 | 与原图画面对齐，无异常偏移 | NOT TESTED | |
@@ -114,6 +119,53 @@ back hair → face → eyelash → head（相对 A 保留原 `order`：3 / 13 / 
 | 透明边缘表现 | 尤其注意 threshold 是否吃掉细边缘 | NOT TESTED | |
 | 明显缺失像素 | 相对 A / 原图 | NOT TESTED | |
 | 是否可开始人工绑定 | 部件是否过少影响识别 | NOT TESTED | |
+
+### C：`cubism-C-cjk-names.psd`（中文图层名，24 层）
+
+来源：`phase2-ingest-test` 新建独立修订 `revision-002`（parent=`original`，label=`cjk-name-acceptance`），**只做重命名**，不改像素、顺序、透明度、显隐；`original` 与 `revision-001` 未改动。不重新运行 AI 分层。
+
+重命名操作文件（本机）：`workspace/phase2-cubism-acceptance/cjk-rename-ops.json`
+
+| layer_id | 中文名 | 是否非空 |
+|----------|--------|----------|
+| head | 头部 | 是 |
+| front-hair | 前发 | 否（alpha=0） |
+| back-hair | 后发 | 是 |
+| face | 脸部 | 是 |
+| eyewhite | 眼白 | 否 |
+| irides | 瞳孔 | 否 |
+| eyelash | 睫毛 | 是 |
+| eyebrow | 眉毛 | 否 |
+| nose | 鼻子 | 否 |
+| mouth | 嘴部 | 否 |
+| eyewear | 饰品（眼镜） | 否（含全角括号） |
+
+See-through 不输出左眼/右眼独立图层（只有 eyewhite / irides / eyelash），所以本次**没有**「左眼」「右眼」两个名称；左右分离属于真实立绘测试的语义问题。
+
+导出命令：
+
+```powershell
+& $py .\services\image-pipeline\adapter\export_psd.py --job $job --revision revision-002 --out-name cubism-C-cjk-names.psd
+```
+
+| 项 | 结果 |
+|----|------|
+| 文件 | `cubism-C-cjk-names.psd`，25696946 字节 |
+| SHA256 | `d56364e35e393c51493eaeeb233be0f2d79e8e5152e4af47730e1352bdca4b30` |
+| 导出器回读（`verify_ok`） | true，errors 为空 |
+| `psd_tools` 回读（`encoding="utf-8"`） | 24 层，11 个中文名逐字一致（自底向上：objects, wings, tail, 后发, footwear, legwear, bottomwear, handwear, topwear, neckwear, neck, ears, earwear, 脸部, 眼白, 瞳孔, 睫毛, 眉毛, 饰品（眼镜）, 鼻子, 嘴部, 前发, headwear, 头部） |
+
+**已知风险（需在 Cubism 中重点确认）：** 中文名只以 UTF-8 字节写在 PSD 图层记录的旧式 Pascal 名称字段里，文件中**没有** `luni`（Unicode 图层名）附加块。用 `psd_tools` 默认编码读取时 `头部` 显示为 `Â§¥ÈÉ®`。Photoshop 一类软件通常优先读 `luni`，没有它时按系统/Mac 代码页解释旧字段，因此 Cubism 中出现乱码的可能性较高。`psd_tools` 能回读中文 ≠ Cubism 能正确显示中文。若 Cubism 实测乱码，修复方向是导出时写入 `luni` 块（属于导出器修复，另开任务，不在本次范围）。
+
+| 检查项 | 预期 / 备注 | 结果 | 证据 |
+|--------|-------------|------|------|
+| 文件 SHA256 | 与上表一致 | NOT TESTED | |
+| Cubism 能否正常打开 | | NOT TESTED | |
+| 图层数量 | 24 | NOT TESTED | |
+| 中文图层名显示 | 11 个中文名逐字正确，无乱码/截断/问号 | NOT TESTED | |
+| 全角括号 `饰品（眼镜）` | 正确显示 | NOT TESTED | |
+| 图层顺序 | 与 A 相同（仅改名） | NOT TESTED | |
+| 画布尺寸 | 1024×1024 | NOT TESTED | |
 
 ### A vs B 观察（人工）
 
@@ -169,6 +221,7 @@ back hair → face → eyelash → head（相对 A 保留原 `order`：3 / 13 / 
 |--------|------|
 | Cubism 格式兼容性（A） | NOT TESTED |
 | Cubism 格式兼容性（B） | NOT TESTED |
+| Cubism 中文图层名（C） | NOT TESTED |
 | 最小人工绑定可行性 | NOT TESTED |
 | 是否启动 P1 遮罩编辑器 | **否**（待上列通过后再议） |
 
