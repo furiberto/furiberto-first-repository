@@ -84,6 +84,6 @@ npm run pipeline:image:test-p01
 
 ## 下一步（不要与代码修复混做）
 
-1. **Cubism Editor 实测**现有 `phase2-ingest-test` 导出 PSD（打开/图层/边缘/最小绑定可行性）
-2. ≥3 张真实立绘端到端记录耗时与节省
-3. 局部遮罩编辑器（独立 mask，不覆盖 AI PNG）
+1. **Cubism Editor 人工验收** — 记录模板与本机 PSD 准备说明见 [`PHASE2-CUBISM-ACCEPTANCE.md`](./PHASE2-CUBISM-ACCEPTANCE.md)（A 默认 24 层 / B `--skip-empty` 4 层；无实测证据保持 `NOT TESTED`）
+2. ≥3 张真实立绘端到端记录耗时与节省（含人工修正 / 绑定准备）
+3. Cubism 实测通过后，再正式启动局部遮罩编辑器（独立 mask，不覆盖 AI PNG）
