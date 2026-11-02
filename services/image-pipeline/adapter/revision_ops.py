@@ -87,6 +87,31 @@ def _part_ids(layers: list[dict]) -> list[str]:
     return [str(L["id"]) for L in layers if L.get("kind", "part") == "part" and L.get("id")]
 
 
+def parse_opacity(value: object, *, missing_default: float | None = 1.0) -> float:
+    """
+    Strict opacity in [0, 1].
+    - Missing (None) → missing_default when not None; else raise.
+    - Non-numeric / NaN / Inf / out of range → raise (never silent clamp).
+    """
+    if value is None:
+        if missing_default is None:
+            raise RevisionError("opacity is missing")
+        return float(missing_default)
+    if isinstance(value, bool):
+        raise RevisionError(f"opacity must be a number, got bool {value!r}")
+    try:
+        opacity = float(value)  # type: ignore[arg-type]
+    except (TypeError, ValueError) as e:
+        raise RevisionError(f"opacity not a number: {value!r}") from e
+    if not math.isfinite(opacity) or opacity < 0.0 or opacity > 1.0:
+        raise RevisionError(f"opacity must be finite in [0, 1], got {opacity!r}")
+    return opacity
+
+
+def opacity_to_byte(value: object, *, missing_default: float | None = 1.0) -> int:
+    return int(round(parse_opacity(value, missing_default=missing_default) * 255))
+
+
 def validate_operations(manifest: dict, operations: list[dict[str, Any]]) -> None:
     if not isinstance(operations, list) or not operations:
         raise RevisionError("operations must be a non-empty list")
@@ -136,12 +161,12 @@ def validate_operations(manifest: dict, operations: list[dict[str, Any]]) -> Non
             if "\x00" in str(value):
                 raise RevisionError(f"op[{i}] rename value contains NUL")
         elif kind == "set_opacity":
+            if "value" not in op:
+                raise RevisionError(f"op[{i}] set_opacity requires value")
             try:
-                opacity = float(op.get("value", 1))
-            except (TypeError, ValueError) as e:
-                raise RevisionError(f"op[{i}] opacity not a number") from e
-            if not math.isfinite(opacity) or opacity < 0.0 or opacity > 1.0:
-                raise RevisionError(f"op[{i}] opacity must be finite in [0, 1], got {opacity!r}")
+                parse_opacity(op.get("value"), missing_default=None)
+            except RevisionError as e:
+                raise RevisionError(f"op[{i}] {e}") from e
         elif kind == "set_visible":
             if not isinstance(op.get("value"), bool):
                 raise RevisionError(f"op[{i}] set_visible value must be bool")
@@ -180,7 +205,7 @@ def apply_operations(manifest: dict, operations: list[dict[str, Any]]) -> dict:
         if kind == "rename":
             layer["name"] = str(op.get("value")).strip()
         elif kind == "set_opacity":
-            layer["opacity"] = float(op.get("value"))
+            layer["opacity"] = parse_opacity(op.get("value"), missing_default=None)
         elif kind == "set_visible":
             layer["visible"] = bool(op.get("value"))
         elif kind == "reorder":

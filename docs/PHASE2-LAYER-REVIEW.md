@@ -61,21 +61,29 @@ live2d-jobs/<id>/
 7. 状态出口：`awaiting_rigging`；导出后仍 `live2d_ready=false`
 8. 演示入口：高级选项「导入 phase0 演示产物」
 
-## P0 可靠性（本轮）
+## P0 可靠性
 
 - 修订：透明度 `[0,1]`、`reorder_all` 完整性、revision/parent ID 校验、失败不留半成品目录
 - 导出回读：画布、数量、名称/顺序、透明度、显隐、全画布 RGBA 像素、UTF-8 中文名
 - 版本分支：`original→A→B` 与 `A→C` 相互独立（见测试）
 - **明确：** `psd_tools` 回读成功 ≠ Cubism Editor 验收成功
 
-测试命令：
+## P0.1 安全与导出一致性（已落地）
+
+| 项 | 原先风险 | 修复后 |
+|----|----------|--------|
+| 空图层 | 策略未用测试钉死 | **默认保留**全透明层；仅 `--skip-empty` 跳过（测试：24→保留 / 24→4+跳过20） |
+| 路径 | 仅字符串查 `..` | 拒绝绝对路径；`resolve()` 后校验仍在 job 沙箱；symlink 逃逸拒绝；失败不写 PSD |
+| 透明度 | 导出器曾 `max/min` 静默截断 | `parse_opacity` 严格校验；缺失→默认 1.0；非法值报错 |
 
 ```powershell
-services/image-pipeline/.venv/Scripts/python.exe services/image-pipeline/tests/test_revision_export_p0.py
+npm run pipeline:image:test      # P0 + P0.1
+npm run pipeline:image:test-p0
+npm run pipeline:image:test-p01
 ```
 
-## 下一步
+## 下一步（不要与代码修复混做）
 
-1. 局部遮罩修正（补回 / 擦除；独立 mask，不覆盖 AI PNG）
-2. Cubism Editor 打开导出 PSD 并记录绑定步骤
-3. ≥3 张真实立绘端到端验收
+1. **Cubism Editor 实测**现有 `phase2-ingest-test` 导出 PSD（打开/图层/边缘/最小绑定可行性）
+2. ≥3 张真实立绘端到端记录耗时与节省
+3. 局部遮罩编辑器（独立 mask，不覆盖 AI PNG）
